@@ -378,7 +378,7 @@ wss.on('connection', (ws) => {
   
   // Assign a unique ID to the player
   const playerId = Math.random().toString(36).substr(2, 9);
-  let playerName = null; // Start with null name
+  let playerName = null;
   const color = COLORS[Object.keys(gameState.players).length % COLORS.length];
   
   // Send initial connection message (without creating player yet)
@@ -470,5 +470,4 @@ setInterval(() => {
 // Start server
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});
 });
