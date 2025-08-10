@@ -1,0 +1,12 @@
+{
+  "name": "snake-server",
+  "version": "1.0.0",
+  "description": "Multiplayer Snake WebSocket server",
+  "main": "snake-server.js",
+  "scripts": {
+    "start": "node snake-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.15.1"
+  }
+}
