@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
 });
 
 // Attach WebSocket server to same HTTP server
-const wss = new WebSocket.Server({ server })
+const wss = new WebSocket.Server({ server });
 
 // Game state
 const gameState = {
@@ -378,38 +378,15 @@ wss.on('connection', (ws) => {
   
   // Assign a unique ID to the player
   const playerId = Math.random().toString(36).substr(2, 9);
-  let playerName = `Player ${Object.keys(gameState.players).length + 1}`;
+  let playerName = null; // Start with null name
   const color = COLORS[Object.keys(gameState.players).length % COLORS.length];
   
-  // Create a new player
-  const spawnPos = getSpawnPosition();
-  const newPlayer = new Player(
-    playerId,
-    playerName,
-    color,
-    spawnPos,
-    {}
-  );
-  
-  gameState.players[playerId] = newPlayer;
-  
-  // Send initial game state to the new player
+  // Send initial connection message (without creating player yet)
   ws.send(JSON.stringify({
-    type: 'init',
+    type: 'connection',
     playerId,
-    playerName,
-    color,
-    gameState
+    color
   }));
-  
-  // Broadcast new player to others
-  broadcast({
-    type: 'playerJoined',
-    playerId,
-    playerName,
-    color,
-    position: spawnPos
-  });
   
   // Handle messages from client
   ws.on('message', (message) => {
@@ -418,11 +395,35 @@ wss.on('connection', (ws) => {
     switch (data.type) {
       case 'setName':
         playerName = data.name.substring(0, 15);
-        gameState.players[playerId].name = playerName;
-        broadcast({
-          type: 'playerRenamed',
+        
+        // Now create the player with the provided name
+        const spawnPos = getSpawnPosition();
+        const newPlayer = new Player(
           playerId,
-          playerName
+          playerName,
+          color,
+          spawnPos,
+          {}
+        );
+        
+        gameState.players[playerId] = newPlayer;
+        
+        // Send full game state now that player is initialized
+        ws.send(JSON.stringify({
+          type: 'init',
+          playerId,
+          playerName,
+          color,
+          gameState
+        }));
+        
+        // Broadcast new player to others
+        broadcast({
+          type: 'playerJoined',
+          playerId,
+          playerName,
+          color,
+          position: spawnPos
         });
         break;
         
@@ -437,11 +438,13 @@ wss.on('connection', (ws) => {
   // Handle client disconnection
   ws.on('close', () => {
     console.log('Client disconnected');
-    delete gameState.players[playerId];
-    broadcast({
-      type: 'playerLeft',
-      playerId
-    });
+    if (playerName) { // Only remove if player was fully initialized
+      delete gameState.players[playerId];
+      broadcast({
+        type: 'playerLeft',
+        playerId
+      });
+    }
   });
 });
 
@@ -467,4 +470,5 @@ setInterval(() => {
 // Start server
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
 });
