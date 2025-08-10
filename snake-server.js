@@ -1,9 +1,16 @@
-const WebSocket = require('ws');
 const http = require('http');
+const WebSocket = require('ws');
 
-const server = http.createServer();
-const PORT = process.env.PORT || 8080; // Render sets PORT automatically
-const wss = new WebSocket.Server({ port: PORT });
+const PORT = process.env.PORT || 8080;
+
+// Create HTTP server
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end("Snake server running");
+});
+
+// Attach WebSocket server to same HTTP server
+const wss = new WebSocket.Server({ server })
 
 // Game state
 const gameState = {
